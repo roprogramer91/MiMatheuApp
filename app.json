@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "MiMatheu",
+    "slug": "mimatheu",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "mimatheu",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1877f2"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mimatheu.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1877f2"
+      },
+      "package": "com.mimatheu.app",
+      "permissions": []
+    },
+    "plugins": [
+      "expo-router",
+      "expo-image-picker"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      }
+    }
+  }
+}

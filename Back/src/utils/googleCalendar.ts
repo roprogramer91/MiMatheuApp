@@ -1,12 +1,5 @@
 import { google } from 'googleapis';
 
-const auth = new google.auth.GoogleAuth({
-  credentials: JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS ?? '{}'),
-  scopes: ['https://www.googleapis.com/auth/calendar.readonly'],
-});
-
-const calendar = google.calendar({ version: 'v3', auth });
-
 export interface CalendarEvent {
   summary?: string | null;
   start: { date?: string | null };
@@ -14,6 +7,15 @@ export interface CalendarEvent {
 }
 
 export async function getEvents(): Promise<CalendarEvent[]> {
+  const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS ?? '{}');
+
+  const auth = new google.auth.GoogleAuth({
+    credentials,
+    scopes: ['https://www.googleapis.com/auth/calendar.readonly'],
+  });
+
+  const calendar = google.calendar({ version: 'v3', auth });
+
   const timeMin = new Date();
   timeMin.setDate(timeMin.getDate() - 3);
 

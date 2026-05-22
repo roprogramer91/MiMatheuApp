@@ -1,0 +1,30 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Farmacia {
+  id            Int    @id @default(autoincrement())
+  nombre        String @unique
+  direccion     String @default("")
+  telefono      String @default("")
+  googleMapsUrl String @default("") @map("google_maps_url")
+  imagenUrl     String @default("") @map("imagen_url")
+}
+
+model Mascota {
+  id           String   @id @default(cuid())
+  nombre       String
+  tipo         String
+  descripcion  String
+  zona         String
+  fechaPerdida String
+  contacto     String
+  color        String
+  activa       Boolean  @default(true)
+  creadaEn     DateTime @default(now()) @map("creada_en")
+}

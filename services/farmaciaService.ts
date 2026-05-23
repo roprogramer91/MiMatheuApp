@@ -23,11 +23,11 @@ function parseFarmacia(d: any): Farmacia {
 }
 
 export async function getFarmaciasAyerHoyManiana(): Promise<AyerHoyManiana> {
-  const res = await fetch('https://farmacia-turnos.vercel.app/api/farmacia/ayerhoymaniana');
+  const res = await fetch('https://mimatheuapp-production.up.railway.app/api/farmacias/ayerhoymaniana');
   if (!res.ok) throw new Error('Error API');
   const json = await res.json();
   console.log('Farmacias raw:', JSON.stringify(json).slice(0, 300));
-  const maniana = json.manana ?? json.maniana ?? json['mañana'] ?? json.tomorrow ?? {};
+  const maniana = json.manana ?? {};
   return {
     ayer: parseFarmacia(json.ayer),
     hoy: parseFarmacia(json.hoy),

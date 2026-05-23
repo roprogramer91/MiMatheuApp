@@ -1,4 +1,4 @@
-const BASE_URL = 'https://mimatheuapp-production.up.railway.app';
+import { BASE_URL } from '../src/constants/api';
 
 export type TipoMascota = 'perro' | 'gato' | 'otro';
 

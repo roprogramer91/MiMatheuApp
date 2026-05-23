@@ -1,3 +1,5 @@
+import { BASE_URL } from '../src/constants/api';
+
 export interface Farmacia {
   nombre: string;
   direccion: string;
@@ -23,7 +25,7 @@ function parseFarmacia(d: any): Farmacia {
 }
 
 export async function getFarmaciasAyerHoyManiana(): Promise<AyerHoyManiana> {
-  const res = await fetch('https://mimatheuapp-production.up.railway.app/api/farmacias/ayerhoymaniana');
+  const res = await fetch(`${BASE_URL}/api/farmacias/ayerhoymaniana`);
   if (!res.ok) throw new Error('Error API');
   const json = await res.json();
   console.log('Farmacias raw:', JSON.stringify(json).slice(0, 300));

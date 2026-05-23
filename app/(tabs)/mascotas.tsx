@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -7,6 +8,7 @@ import {
   Alert,
   Linking,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -38,9 +40,17 @@ const CAMPOS_VACIOS = {
   tipo: 'perro' as TipoMascota,
   descripcion: '',
   zona: '',
-  fechaPerdida: '',
   contacto: '',
 };
+
+function formatFecha(date: Date): string {
+  const d = String(date.getDate()).padStart(2, '0');
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const y = date.getFullYear();
+  return `${d}/${m}/${y}`;
+}
+
+type Errores = Partial<Record<keyof typeof CAMPOS_VACIOS | 'fecha', string>>;
 
 export default function Mascotas() {
   const [filtro, setFiltro] = useState<Filtro>('todos');
@@ -49,6 +59,9 @@ export default function Mascotas() {
   const [error, setError] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [form, setForm] = useState(CAMPOS_VACIOS);
+  const [fecha, setFecha] = useState<Date | null>(null);
+  const [showPicker, setShowPicker] = useState(false);
+  const [errores, setErrores] = useState<Errores>({});
   const [guardando, setGuardando] = useState(false);
 
   useEffect(() => {
@@ -70,26 +83,50 @@ export default function Mascotas() {
     }
   }, []);
 
-  useEffect(() => {
-    cargar(filtro);
-  }, [filtro, cargar]);
+  useEffect(() => { cargar(filtro); }, [filtro, cargar]);
+
+  function onCerrarModal() {
+    setModalVisible(false);
+    setForm(CAMPOS_VACIOS);
+    setFecha(null);
+    setErrores({});
+  }
+
+  function validar(): boolean {
+    const e: Errores = {};
+    if (!form.nombre.trim() || form.nombre.trim().length < 2) e.nombre = 'Ingresá el nombre (mínimo 2 caracteres)';
+    if (!form.descripcion.trim()) e.descripcion = 'Describí a la mascota';
+    if (!form.zona.trim()) e.zona = 'Ingresá la zona donde se perdió';
+    if (!fecha) e.fecha = 'Seleccioná la fecha en que se perdió';
+    if (!form.contacto || form.contacto.length < 8) e.contacto = 'Ingresá un teléfono válido (mín. 8 dígitos)';
+    setErrores(e);
+    return Object.keys(e).length === 0;
+  }
 
   async function handleReportar() {
-    if (!form.nombre || !form.descripcion || !form.zona || !form.fechaPerdida || !form.contacto) {
-      Alert.alert('Campos incompletos', 'Completá todos los campos antes de reportar.');
-      return;
-    }
+    if (!validar()) return;
     try {
       setGuardando(true);
-      await reportarMascota({ ...form, color: COLORES_TIPO[form.tipo] });
-      setForm(CAMPOS_VACIOS);
-      setModalVisible(false);
+      await reportarMascota({
+        ...form,
+        fechaPerdida: formatFecha(fecha!),
+        color: COLORES_TIPO[form.tipo],
+      });
+      onCerrarModal();
       Alert.alert('Reporte enviado', 'La mascota fue reportada correctamente.');
       cargar(filtro);
     } catch {
       Alert.alert('Error', 'No se pudo enviar el reporte. Intentá de nuevo.');
     } finally {
       setGuardando(false);
+    }
+  }
+
+  function onChangeFecha(_: DateTimePickerEvent, selected?: Date) {
+    setShowPicker(Platform.OS === 'ios');
+    if (selected) {
+      setFecha(selected);
+      setErrores(e => ({ ...e, fecha: undefined }));
     }
   }
 
@@ -108,7 +145,6 @@ export default function Mascotas() {
         </TouchableOpacity>
       </View>
 
-      {/* Filtros */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtroScroll} contentContainerStyle={styles.filtroContent}>
         {FILTROS.map(f => (
           <TouchableOpacity key={f.key} style={[styles.chip, filtro === f.key && styles.chipActivo]} onPress={() => setFiltro(f.key)}>
@@ -124,7 +160,6 @@ export default function Mascotas() {
           <Text style={styles.centroText}>Cargando...</Text>
         </View>
       )}
-
       {error && (
         <View style={styles.centro}>
           <Ionicons name="alert-circle-outline" size={48} color={colors.error} />
@@ -134,14 +169,12 @@ export default function Mascotas() {
           </TouchableOpacity>
         </View>
       )}
-
       {!loading && !error && mascotas.length === 0 && (
         <View style={styles.centro}>
           <Ionicons name="paw-outline" size={48} color={colors.grisMedio} />
           <Text style={styles.centroText}>No hay reportes activos</Text>
         </View>
       )}
-
       {!loading && !error && mascotas.length > 0 && (
         <ScrollView contentContainerStyle={styles.lista} showsVerticalScrollIndicator={false}>
           {mascotas.map(m => <CardMascota key={m.id} mascota={m} />)}
@@ -150,23 +183,25 @@ export default function Mascotas() {
       )}
 
       {/* Modal reportar */}
-      <Modal visible={modalVisible} animationType="slide" transparent>
+      <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={onCerrarModal}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitulo}>Reportar mascota perdida</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
+              <TouchableOpacity onPress={onCerrarModal}>
                 <Ionicons name="close" size={24} color={colors.texto} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.label}>Tipo</Text>
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+
+              {/* Tipo */}
+              <Text style={styles.label}>Tipo de mascota</Text>
               <View style={styles.tipoRow}>
                 {(['perro', 'gato', 'otro'] as TipoMascota[]).map(t => (
                   <TouchableOpacity
                     key={t}
-                    style={[styles.tipoBtn, form.tipo === t && { backgroundColor: COLORES_TIPO[t] }]}
+                    style={[styles.tipoBtn, form.tipo === t && { backgroundColor: COLORES_TIPO[t], borderColor: COLORES_TIPO[t] }]}
                     onPress={() => setForm(f => ({ ...f, tipo: t }))}
                   >
                     <Text style={[styles.tipoBtnText, form.tipo === t && { color: colors.blanco }]}>
@@ -176,29 +211,83 @@ export default function Mascotas() {
                 ))}
               </View>
 
-              {[
-                { key: 'nombre', label: 'Nombre', placeholder: 'Ej: Luna' },
-                { key: 'descripcion', label: 'Descripción', placeholder: 'Color, tamaño, collar...' },
-                { key: 'zona', label: 'Zona donde se perdió', placeholder: 'Ej: B° Centro' },
-                { key: 'fechaPerdida', label: 'Fecha', placeholder: 'Ej: 23/05/2026' },
-                { key: 'contacto', label: 'Teléfono de contacto', placeholder: 'Ej: 1140001111' },
-              ].map(({ key, label, placeholder }) => (
-                <View key={key}>
-                  <Text style={styles.label}>{label}</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder={placeholder}
-                    placeholderTextColor={colors.grisMedio}
-                    value={form[key as keyof typeof CAMPOS_VACIOS]}
-                    onChangeText={v => setForm(f => ({ ...f, [key]: v }))}
-                    keyboardType={key === 'contacto' ? 'phone-pad' : 'default'}
-                    multiline={key === 'descripcion'}
-                  />
-                </View>
-              ))}
+              {/* Nombre */}
+              <Text style={styles.label}>Nombre</Text>
+              <TextInput
+                style={[styles.input, errores.nombre ? styles.inputError : null]}
+                placeholder="Ej: Luna"
+                placeholderTextColor={colors.grisMedio}
+                value={form.nombre}
+                onChangeText={v => { setForm(f => ({ ...f, nombre: v })); setErrores(e => ({ ...e, nombre: undefined })); }}
+              />
+              {errores.nombre && <Text style={styles.errorText}>{errores.nombre}</Text>}
+
+              {/* Descripción */}
+              <Text style={styles.label}>Descripción</Text>
+              <TextInput
+                style={[styles.input, styles.inputMulti, errores.descripcion ? styles.inputError : null]}
+                placeholder="Color, tamaño, collar, señas particulares..."
+                placeholderTextColor={colors.grisMedio}
+                value={form.descripcion}
+                onChangeText={v => { setForm(f => ({ ...f, descripcion: v })); setErrores(e => ({ ...e, descripcion: undefined })); }}
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+              />
+              {errores.descripcion && <Text style={styles.errorText}>{errores.descripcion}</Text>}
+
+              {/* Zona */}
+              <Text style={styles.label}>Zona donde se perdió</Text>
+              <TextInput
+                style={[styles.input, errores.zona ? styles.inputError : null]}
+                placeholder="Ej: B° Centro, Ruta 6 zona..."
+                placeholderTextColor={colors.grisMedio}
+                value={form.zona}
+                onChangeText={v => { setForm(f => ({ ...f, zona: v })); setErrores(e => ({ ...e, zona: undefined })); }}
+              />
+              {errores.zona && <Text style={styles.errorText}>{errores.zona}</Text>}
+
+              {/* Fecha */}
+              <Text style={styles.label}>Fecha en que se perdió</Text>
+              <TouchableOpacity
+                style={[styles.input, styles.fechaBtn, errores.fecha ? styles.inputError : null]}
+                onPress={() => setShowPicker(true)}
+              >
+                <Ionicons name="calendar-outline" size={18} color={fecha ? colors.texto : colors.grisMedio} />
+                <Text style={[styles.fechaText, !fecha && { color: colors.grisMedio }]}>
+                  {fecha ? formatFecha(fecha) : 'Seleccioná la fecha'}
+                </Text>
+              </TouchableOpacity>
+              {errores.fecha && <Text style={styles.errorText}>{errores.fecha}</Text>}
+              {showPicker && (
+                <DateTimePicker
+                  value={fecha ?? new Date()}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'inline' : 'default'}
+                  maximumDate={new Date()}
+                  onChange={onChangeFecha}
+                />
+              )}
+
+              {/* Contacto */}
+              <Text style={styles.label}>Teléfono de contacto</Text>
+              <TextInput
+                style={[styles.input, errores.contacto ? styles.inputError : null]}
+                placeholder="Ej: 1140001111"
+                placeholderTextColor={colors.grisMedio}
+                value={form.contacto}
+                onChangeText={v => {
+                  const soloNumeros = v.replace(/[^0-9]/g, '');
+                  setForm(f => ({ ...f, contacto: soloNumeros }));
+                  setErrores(e => ({ ...e, contacto: undefined }));
+                }}
+                keyboardType="numeric"
+                maxLength={15}
+              />
+              {errores.contacto && <Text style={styles.errorText}>{errores.contacto}</Text>}
 
               <TouchableOpacity
-                style={[globalStyles.button, guardando && { opacity: 0.6 }]}
+                style={[globalStyles.button, { marginTop: 20 }, guardando && { opacity: 0.6 }]}
                 onPress={handleReportar}
                 disabled={guardando}
               >
@@ -207,7 +296,7 @@ export default function Mascotas() {
                   : <Text style={globalStyles.buttonText}>Enviar reporte</Text>
                 }
               </TouchableOpacity>
-              <View style={{ height: 20 }} />
+              <View style={{ height: 30 }} />
             </ScrollView>
           </View>
         </View>
@@ -282,12 +371,17 @@ const styles = StyleSheet.create({
   llamarBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6, backgroundColor: colors.primarioClaro, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, alignSelf: 'flex-start' },
   llamarText: { fontSize: 12, color: colors.primario, fontWeight: '600' as const },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalBox: { backgroundColor: colors.blanco, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '90%' },
-  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  modalBox: { backgroundColor: colors.blanco, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '92%' },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   modalTitulo: { fontSize: 18, fontWeight: '700' as const, color: colors.texto },
-  label: { fontSize: 13, fontWeight: '600' as const, color: colors.textoSecundario, marginBottom: 6, marginTop: 12 },
-  input: { borderWidth: 1, borderColor: colors.gris, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: colors.texto, backgroundColor: colors.grisClaro },
+  label: { fontSize: 13, fontWeight: '600' as const, color: colors.textoSecundario, marginBottom: 6, marginTop: 14 },
+  input: { borderWidth: 1, borderColor: colors.gris, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, fontSize: 14, color: colors.texto, backgroundColor: colors.grisClaro },
+  inputMulti: { minHeight: 72, paddingTop: 10 },
+  inputError: { borderColor: colors.error },
+  errorText: { fontSize: 12, color: colors.error, marginTop: 4 },
+  fechaBtn: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  fechaText: { fontSize: 14, color: colors.texto },
   tipoRow: { flexDirection: 'row', gap: 8 },
-  tipoBtn: { flex: 1, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: colors.gris, alignItems: 'center', backgroundColor: colors.grisClaro },
+  tipoBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: colors.gris, alignItems: 'center', backgroundColor: colors.grisClaro },
   tipoBtnText: { fontSize: 13, fontWeight: '600' as const, color: colors.texto },
 });

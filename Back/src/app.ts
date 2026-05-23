@@ -2,6 +2,7 @@ import cors from 'cors';
 import 'dotenv/config';
 import express from 'express';
 import morgan from 'morgan';
+import authRoutes from './auth/auth.routes';
 import farmaciaRoutes from './farmacias/farmacias.routes';
 import mascotaRoutes from './mascotas/mascotas.routes';
 import uploadRoutes from './upload/upload.routes';
@@ -16,6 +17,7 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
+app.use('/api/auth', authRoutes);
 app.use('/api/farmacias', farmaciaRoutes);
 app.use('/api/mascotas', mascotaRoutes);
 app.use('/api/upload', uploadRoutes);

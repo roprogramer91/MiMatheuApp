@@ -21,6 +21,7 @@ import {
 import { getMascotas, Mascota, reportarMascota, subirFoto, TipoMascota } from '../../services/mascotaService';
 import colors from '../../src/constants/colors';
 import globalStyles from '../../src/styles/globalStyles';
+import { getUsuario, Usuario } from '../../src/utils/auth';
 
 type Filtro = TipoMascota | 'todos';
 
@@ -43,7 +44,6 @@ const CAMPOS_VACIOS = {
   descripcion: '',
   zona: '',
   contacto: '',
-  publicadoPor: '',
 };
 
 function formatFecha(date: Date): string {
@@ -66,11 +66,13 @@ export default function Mascotas() {
   const [fotoUri, setFotoUri] = useState<string | null>(null);
   const [errores, setErrores] = useState<Errores>({});
   const [guardando, setGuardando] = useState(false);
+  const [usuario, setUsuario] = useState<Usuario | null>(null);
 
   useEffect(() => {
     AsyncStorage.getItem('visits_mascotas').then(v => {
       AsyncStorage.setItem('visits_mascotas', String(parseInt(v ?? '0', 10) + 1));
     }).catch(() => {});
+    getUsuario().then(u => setUsuario(u));
   }, []);
 
   const cargar = useCallback(async (tipo: Filtro) => {
@@ -120,7 +122,6 @@ export default function Mascotas() {
 
   function validar(): boolean {
     const e: Errores = {};
-    if (!form.publicadoPor.trim()) e.publicadoPor = 'Ingresá tu nombre';
     if (!form.nombre.trim() || form.nombre.trim().length < 2) e.nombre = 'Ingresá el nombre (mínimo 2 caracteres)';
     if (!form.descripcion.trim()) e.descripcion = 'Describí a la mascota';
     if (!form.zona.trim()) e.zona = 'Ingresá la zona donde se perdió';
@@ -138,6 +139,7 @@ export default function Mascotas() {
       const fotoUrl = await subirFoto(fotoUri!);
       await reportarMascota({
         ...form,
+        publicadoPor: usuario?.nombre ?? '',
         fechaPerdida: formatFecha(fecha!),
         color: COLORES_TIPO[form.tipo],
         foto: fotoUrl,
@@ -226,17 +228,6 @@ export default function Mascotas() {
                 )}
               </TouchableOpacity>
               {errores.foto && <Text style={styles.errorText}>{errores.foto}</Text>}
-
-              {/* Tu nombre */}
-              <Text style={styles.label}>Tu nombre <Text style={styles.requerido}>*</Text></Text>
-              <TextInput
-                style={[styles.input, errores.publicadoPor ? styles.inputError : null]}
-                placeholder="¿Quién publica este reporte?"
-                placeholderTextColor={colors.grisMedio}
-                value={form.publicadoPor}
-                onChangeText={v => { setForm(f => ({ ...f, publicadoPor: v })); setErrores(e => ({ ...e, publicadoPor: undefined })); }}
-              />
-              {errores.publicadoPor && <Text style={styles.errorText}>{errores.publicadoPor}</Text>}
 
               {/* Tipo */}
               <Text style={styles.label}>Tipo de mascota</Text>

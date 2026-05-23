@@ -22,9 +22,9 @@ const farmacias = [
   },
   {
     nombre: 'Perez Montoya',
-    direccion: '',
-    telefono: '',
-    googleMapsUrl: '',
+    direccion: 'Ruta 25 1015, B1627 Matheu, Provincia de Buenos Aires',
+    telefono: '0348154388985',
+    googleMapsUrl: 'https://maps.app.goo.gl/Wk7YyDjp7rj3mURu5',
     imagenUrl: '',
   },
   {

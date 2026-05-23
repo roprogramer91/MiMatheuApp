@@ -25,6 +25,8 @@ model Mascota {
   fechaPerdida String
   contacto     String
   color        String
+  foto         String   @default("")
+  publicadoPor String   @default("") @map("publicado_por")
   activa       Boolean  @default(true)
   creadaEn     DateTime @default(now()) @map("creada_en")
 }

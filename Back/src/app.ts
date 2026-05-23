@@ -4,6 +4,7 @@ import express from 'express';
 import morgan from 'morgan';
 import farmaciaRoutes from './farmacias/farmacias.routes';
 import mascotaRoutes from './mascotas/mascotas.routes';
+import uploadRoutes from './upload/upload.routes';
 
 const app = express();
 
@@ -17,5 +18,6 @@ app.get('/health', (_req, res) => {
 
 app.use('/api/farmacias', farmaciaRoutes);
 app.use('/api/mascotas', mascotaRoutes);
+app.use('/api/upload', uploadRoutes);
 
 export default app;

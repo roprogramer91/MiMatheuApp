@@ -18,6 +18,8 @@ export async function createMascota(data: {
   fechaPerdida: string;
   contacto: string;
   color: string;
+  foto?: string;
+  publicadoPor?: string;
 }) {
   return prisma.mascota.create({ data });
 }

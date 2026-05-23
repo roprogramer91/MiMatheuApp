@@ -29,16 +29,16 @@ const farmacias = [
   },
   {
     nombre: 'Godoy',
-    direccion: '',
-    telefono: '',
-    googleMapsUrl: '',
+    direccion: 'San Martín 180, B1627 Matheu, Provincia de Buenos Aires',
+    telefono: '03484462444',
+    googleMapsUrl: 'https://maps.app.goo.gl/yFb63UhA9i2XRkpv8',
     imagenUrl: '',
   },
   {
     nombre: 'Manher',
-    direccion: '',
-    telefono: '',
-    googleMapsUrl: '',
+    direccion: 'Av. Hipólito Yrigoyen 490, B1627DLR Matheu, Provincia de Buenos Aires',
+    telefono: '03484469173',
+    googleMapsUrl: 'https://maps.app.goo.gl/9YLhDJGAccH56Udk7',
     imagenUrl: '',
   },
 ];

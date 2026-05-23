@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Alert,
+  ActivityIndicator,
   Linking,
   ScrollView,
   StyleSheet,
@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Mascota, mockMascotas, TipoMascota } from '../../services/mockMascotas';
+import { getMascotas, Mascota, TipoMascota } from '../../services/mascotaService';
 import colors from '../../src/constants/colors';
 import globalStyles from '../../src/styles/globalStyles';
 
@@ -26,6 +26,9 @@ const FILTROS: { key: Filtro; label: string; emoji: string }[] = [
 
 export default function Mascotas() {
   const [filtro, setFiltro] = useState<Filtro>('todos');
+  const [mascotas, setMascotas] = useState<Mascota[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     AsyncStorage.getItem('visits_mascotas').then(v => {
@@ -33,7 +36,22 @@ export default function Mascotas() {
     }).catch(() => {});
   }, []);
 
-  const lista = filtro === 'todos' ? mockMascotas : mockMascotas.filter(m => m.tipo === filtro);
+  const cargar = useCallback(async (tipo: Filtro) => {
+    try {
+      setLoading(true);
+      setError(false);
+      const data = await getMascotas(tipo);
+      setMascotas(data);
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    cargar(filtro);
+  }, [filtro, cargar]);
 
   return (
     <View style={globalStyles.container}>
@@ -42,15 +60,8 @@ export default function Mascotas() {
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
           <Text style={styles.titulo}>Mascotas Perdidas</Text>
-          <Text style={styles.sub}>{mockMascotas.length} reportes en Matheu</Text>
+          <Text style={styles.sub}>{!loading && !error ? `${mascotas.length} reportes en Matheu` : 'Matheu'}</Text>
         </View>
-        <TouchableOpacity
-          style={styles.reportBtn}
-          onPress={() => Alert.alert('Próximamente', 'Esta función estará disponible pronto.')}
-        >
-          <Ionicons name="add" size={20} color={colors.blanco} />
-          <Text style={styles.reportBtnText}>Reportar</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Filtros */}
@@ -72,11 +83,36 @@ export default function Mascotas() {
         ))}
       </ScrollView>
 
-      {/* Lista */}
-      <ScrollView contentContainerStyle={styles.lista} showsVerticalScrollIndicator={false}>
-        {lista.map(m => <CardMascota key={m.id} mascota={m} />)}
-        <View style={{ height: 20 }} />
-      </ScrollView>
+      {loading && (
+        <View style={styles.centro}>
+          <ActivityIndicator size="large" color={colors.primario} />
+          <Text style={styles.centroText}>Cargando...</Text>
+        </View>
+      )}
+
+      {error && (
+        <View style={styles.centro}>
+          <Ionicons name="alert-circle-outline" size={48} color={colors.error} />
+          <Text style={styles.centroText}>Error al cargar</Text>
+          <TouchableOpacity style={globalStyles.button} onPress={() => cargar(filtro)}>
+            <Text style={globalStyles.buttonText}>Reintentar</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {!loading && !error && mascotas.length === 0 && (
+        <View style={styles.centro}>
+          <Ionicons name="paw-outline" size={48} color={colors.grisMedio} />
+          <Text style={styles.centroText}>No hay reportes activos</Text>
+        </View>
+      )}
+
+      {!loading && !error && mascotas.length > 0 && (
+        <ScrollView contentContainerStyle={styles.lista} showsVerticalScrollIndicator={false}>
+          {mascotas.map(m => <CardMascota key={m.id} mascota={m} />)}
+          <View style={{ height: 20 }} />
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -130,16 +166,6 @@ const styles = StyleSheet.create({
   },
   titulo: { fontSize: 24, fontWeight: '700' as const, color: colors.blanco, marginBottom: 2 },
   sub: { fontSize: 13, color: 'rgba(255,255,255,0.75)' },
-  reportBtn: {
-    backgroundColor: colors.acento,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  reportBtnText: { color: colors.blanco, fontSize: 13, fontWeight: '600' as const },
   filtroScroll: { flexGrow: 0, paddingVertical: 10 },
   filtroContent: { paddingHorizontal: 16, gap: 8 },
   chip: {
@@ -157,6 +183,8 @@ const styles = StyleSheet.create({
   chipEmoji: { fontSize: 14 },
   chipText: { fontSize: 13, fontWeight: '500' as const, color: colors.grisOscuro },
   chipTextActivo: { color: colors.primario, fontWeight: '700' as const },
+  centro: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  centroText: { fontSize: 15, color: colors.grisMedio, marginTop: 4 },
   lista: { paddingTop: 4 },
   card: { padding: 0, flexDirection: 'row', overflow: 'hidden' },
   accent: { width: 4 },

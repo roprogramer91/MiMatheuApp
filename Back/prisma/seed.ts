@@ -43,6 +43,14 @@ const farmacias = [
   },
 ];
 
+const mascotas = [
+  { nombre: 'Luna', tipo: 'perro', descripcion: 'Labrador blanca, collar azul, muy amigable', zona: 'B° Centro', fechaPerdida: '20/05/2026', contacto: '1140001111', color: '#f97316' },
+  { nombre: 'Michi', tipo: 'gato', descripcion: 'Atigrado naranja, ojos verdes, es castrado', zona: 'B° Norte', fechaPerdida: '18/05/2026', contacto: '1140002222', color: '#3b82f6' },
+  { nombre: 'Toby', tipo: 'perro', descripcion: 'Beagle marrón y blanco, sin collar', zona: 'Ruta 6 zona', fechaPerdida: '15/05/2026', contacto: '1140003333', color: '#10b981' },
+  { nombre: 'Puchi', tipo: 'gato', descripcion: 'Negro con mancha blanca en el pecho', zona: 'B° Sur', fechaPerdida: '21/05/2026', contacto: '1140004444', color: '#8b5cf6' },
+  { nombre: 'Rex', tipo: 'perro', descripcion: 'Rottweiler grande, dócil, tiene chip', zona: 'B° Este', fechaPerdida: '19/05/2026', contacto: '1140005555', color: '#ef4444' },
+];
+
 async function main() {
   console.log('Ejecutando seed de farmacias...');
 
@@ -53,6 +61,12 @@ async function main() {
       create: f,
     });
     console.log(`  ✓ ${f.nombre}`);
+  }
+
+  console.log('\nEjecutando seed de mascotas...');
+  for (const m of mascotas) {
+    await prisma.mascota.create({ data: m });
+    console.log(`  ✓ ${m.nombre}`);
   }
 
   console.log('Seed completado.');

@@ -31,7 +31,8 @@ router.post('/', upload.single('foto'), async (req: Request, res: Response) => {
     });
     res.json({ url: result.secure_url });
   } catch (error) {
-    res.status(500).json({ message: 'Error al subir imagen', error: String(error) });
+    console.error('Cloudinary upload error:', JSON.stringify(error), error);
+    res.status(500).json({ message: 'Error al subir imagen', error: error instanceof Error ? error.message : JSON.stringify(error) });
   }
 });
 

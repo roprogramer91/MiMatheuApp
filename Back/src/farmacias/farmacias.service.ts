@@ -35,8 +35,11 @@ export async function getFarmaciaTurnoPorFecha(fecha: string): Promise<FarmaciaR
 
   if (!evento) return vacia('Sin datos');
 
-  const nombre = evento.summary ?? 'Sin nombre';
-  const farmacia = await prisma.farmacia.findFirst({ where: { nombre } });
+  const nombre = (evento.summary ?? '').trim();
+  console.log('[farmacias] buscando en DB:', JSON.stringify(nombre));
+  const farmacia = await prisma.farmacia.findFirst({
+    where: { nombre: { equals: nombre, mode: 'insensitive' } },
+  });
 
   if (farmacia) {
     return {

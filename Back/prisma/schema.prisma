@@ -10,8 +10,9 @@ datasource db {
 model Usuario {
   id        String    @id @default(cuid())
   nombre    String
-  telefono  String    @unique
+  telefono  String?   @unique
   email     String?   @unique
+  googleId  String?   @unique @map("google_id")
   creadoEn  DateTime  @default(now()) @map("creado_en")
 }
 

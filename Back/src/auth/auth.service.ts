@@ -6,10 +6,12 @@ const JWT_SECRET = process.env.JWT_SECRET ?? 'mimatheu_secret_dev';
 export interface TokenPayload {
   id: string;
   nombre: string;
-  telefono: string;
+  telefono?: string;
 }
 
-function generarToken(payload: TokenPayload): string {
+function generarToken(usuario: { id: string; nombre: string; telefono?: string | null }): string {
+  const payload: TokenPayload = { id: usuario.id, nombre: usuario.nombre };
+  if (usuario.telefono) payload.telefono = usuario.telefono;
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '365d' });
 }
 
@@ -23,7 +25,7 @@ export async function registro(data: { nombre: string; telefono: string; email?:
   }
 
   const usuario = await prisma.usuario.create({ data });
-  const token = generarToken({ id: usuario.id, nombre: usuario.nombre, telefono: usuario.telefono });
+  const token = generarToken(usuario);
   return { usuario, token };
 }
 
@@ -31,7 +33,7 @@ export async function login(telefono: string) {
   const usuario = await prisma.usuario.findUnique({ where: { telefono } });
   if (!usuario) throw new Error('USUARIO_NO_ENCONTRADO');
 
-  const token = generarToken({ id: usuario.id, nombre: usuario.nombre, telefono: usuario.telefono });
+  const token = generarToken(usuario);
   return { usuario, token };
 }
 
@@ -39,6 +41,26 @@ export async function loginConEmail(email: string) {
   const usuario = await prisma.usuario.findUnique({ where: { email } });
   if (!usuario) throw new Error('USUARIO_NO_ENCONTRADO');
 
-  const token = generarToken({ id: usuario.id, nombre: usuario.nombre, telefono: usuario.telefono });
+  const token = generarToken(usuario);
+  return { usuario, token };
+}
+
+export async function loginConGoogle(data: { googleId: string; email: string; nombre: string }) {
+  let usuario = await prisma.usuario.findFirst({
+    where: { OR: [{ googleId: data.googleId }, { email: data.email }] },
+  });
+
+  if (!usuario) {
+    usuario = await prisma.usuario.create({
+      data: { googleId: data.googleId, email: data.email, nombre: data.nombre },
+    });
+  } else if (!usuario.googleId) {
+    usuario = await prisma.usuario.update({
+      where: { id: usuario.id },
+      data: { googleId: data.googleId },
+    });
+  }
+
+  const token = generarToken(usuario);
   return { usuario, token };
 }

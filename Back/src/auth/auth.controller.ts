@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { login, loginConEmail, registro } from './auth.service';
+import { login, loginConEmail, loginConGoogle, registro } from './auth.service';
 
 export async function registrar(req: Request, res: Response) {
   try {
@@ -38,6 +38,20 @@ export async function ingresar(req: Request, res: Response) {
     } else {
       res.status(500).json({ message: 'Error al ingresar', error: msg });
     }
+  }
+}
+
+export async function google(req: Request, res: Response) {
+  try {
+    const { googleId, email, nombre } = req.body;
+    if (!googleId || !email || !nombre) {
+      res.status(400).json({ message: 'googleId, email y nombre son requeridos' });
+      return;
+    }
+    const result = await loginConGoogle({ googleId, email, nombre });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: 'Error al autenticar con Google', error: String(error) });
   }
 }
 

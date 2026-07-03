@@ -7,6 +7,7 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+console.log('[Cloudinary] cloud:', process.env.CLOUDINARY_CLOUD_NAME, '| key:', process.env.CLOUDINARY_API_KEY, '| secret len:', process.env.CLOUDINARY_API_SECRET?.length);
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });

@@ -54,3 +54,20 @@ Pedirle a Codex que revise el proyecto completo y complete este documento con:
 ## Regla
 
 Este archivo debe actualizarse después de cambios importantes.
+
+## Actualizacion 2026-07-06
+
+Se inicio la implementacion del Design System oficial mediante una nueva carpeta `src/ui`.
+
+Cambios realizados:
+
+- `src/ui/theme`: tokens de colores, tipografia, spacing, radios, sombras, tamanos y theme consolidado.
+- `src/ui/layout`: componentes base de estructura visual.
+- `src/ui/components`: componentes UI genericos reutilizables.
+- `src/ui/cards`: cards presentacionales alineadas con `AI/DESIGN_SYSTEM.md`.
+- `src/ui/feedback`: estados visuales de carga, vacio, error y skeleton.
+- `src/ui/hooks`: hook `useTheme`.
+- `src/ui/index.ts`: exports centralizados para importar desde `@/ui`.
+- `tsconfig.json`: alias `@/*` hacia `src/*`.
+
+No se modificaron pantallas, navegacion ni logica existente.
